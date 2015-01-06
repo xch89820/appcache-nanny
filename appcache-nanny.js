@@ -221,6 +221,19 @@
       return;
     }
 
+    if (applicationCache.status !== applicationCache.UNCACHED) {
+
+      subscribeToEvents();
+      setupPending = false;
+      setupDone = true;
+      setupCallbacks.forEach(function(callback) {
+        callback();
+      });
+      return;
+    }
+
+
+
     // load the appcache-loader.html using an iframe
     iframe = document.createElement('iframe');
     iframe.src = nannyOptions.loaderPath;
