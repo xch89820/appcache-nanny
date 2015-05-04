@@ -39,9 +39,9 @@
          *  Off: stop listening to event / specific callback
          */
         target.off = function(type, func){
-            type || (events = {})
+            type || (events = {});
             var list = events[type] || [],
-                i = list.length = func ? list.length : 0
+                i = list.length = func ? list.length : 0;
             while(i-->0) func == list[i].f && list.splice(i,1)
         };
         /**
@@ -49,7 +49,7 @@
          */
         target.emit = function(){
             var args = Array.apply([], arguments),
-                list = events[args.shift()] || [], i=0, j
+                list = events[args.shift()] || [], i=0, j;
             for(;j=list[i++];) j.f.apply(j.c, args)
         };
     }
@@ -232,7 +232,7 @@
         }
 
         try {
-            me.isInitialDownload = !localStorage.getItem(APPCACHE_STORE_KEY);
+            me.isInitialDownload = !!localStorage.getItem(APPCACHE_STORE_KEY);
             localStorage.setItem(APPCACHE_STORE_KEY, '1');
         } catch(e) {}
 
@@ -241,19 +241,27 @@
             return me._setupFinished();
         }
 
-        // Load the fallback html via an iframe
-        iframe = document.createElement('iframe');
-        iframe.src = me.options.loaderPath;
-        iframe.style.display = 'none';
-        iframe.onload = function() {
-            // we use the iFrame's applicationCache Object now
-            me.applicationCache = iframe.contentWindow.applicationCache;
-            me._setupFinished();
-        };
-        iframe.onerror = function() {
-            throw new Error('/appcache-loader.html could not be loaded.');
-        };
-        me.ifameHook = iframe;
+        var iframeID = 'appcache-nanny-iframe';
+        // Remove exist iframe
+        iframe = document.getElementById(iframeID);
+        if (iframe && iframe.tagName.toLowerCase() === 'iframe'){
+            me.ifameHook = iframe;
+        }else{
+            // Load the fallback html via an iframe
+            iframe = document.createElement('iframe');
+            iframe.id = iframeID;
+            iframe.src = me.options.loaderPath;
+            iframe.style.display = 'none';
+            iframe.onload = function() {
+                // we use the iFrame's applicationCache Object now
+                me.applicationCache = iframe.contentWindow.applicationCache;
+                me._setupFinished();
+            };
+            iframe.onerror = function() {
+                throw new Error('appcache-loader iframe could not be loaded.');
+            };
+            me.ifameHook = iframe;
+        }
 
         scriptTag = document.getElementsByTagName('script')[0];
         scriptTag.parentNode.insertBefore(iframe,scriptTag);
@@ -310,16 +318,17 @@
     };
 
     appCacheNanny.prototype.handleUpdateReady = function() {
+        var me = this;
         // I have seen both Chorme & Firefox throw exceptions when trying
         // to swap cache on updateready. I was not able to reproduce it,
         // but for the sake of sanity, I'm making it fail silently
         try {
-            if (!this.hasUpdateFlag) {
-                this.hasUpdateFlag = true;
+            if (!me.hasUpdateFlag) {
+                me.hasUpdateFlag = true;
                 // don't use trigger here, otherwise the event wouldn't get triggered
-                this.emit('updateready');
+                me.emit('updateready');
             }
-            this.applicationCache.swapCache();
+            me.applicationCache.swapCache();
         } catch(error) {}
     };
 
@@ -335,7 +344,7 @@
         if (me.isInitialDownload) {
             prefix = 'init:';
             if (event.type === 'cached') {
-                me.isInitialDownload = false;
+                me.isInitialDownload = true;
             }
         }
 
