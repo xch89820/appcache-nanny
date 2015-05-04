@@ -232,7 +232,7 @@
         }
 
         try {
-            me.isInitialDownload = !!localStorage.getItem(APPCACHE_STORE_KEY);
+            me.isInitialDownload = !localStorage.getItem(APPCACHE_STORE_KEY);
             localStorage.setItem(APPCACHE_STORE_KEY, '1');
         } catch(e) {}
 
@@ -308,7 +308,8 @@
         // fired when manifest download succeeded
         on('noupdate',     me.handleNetworkSucces);
         on('cached',       me.handleNetworkSucces);
-        on('updateready',  me.handleNetworkSucces);
+        // fird it in handleUpdateReady
+        //on('updateready',  me.handleNetworkSucces);
         on('progress',     me.handleNetworkSucces);
         on('downloading', me. handleNetworkSucces);
 
@@ -317,7 +318,7 @@
         window.addEventListener("offline", me.update, false);
     };
 
-    appCacheNanny.prototype.handleUpdateReady = function() {
+    appCacheNanny.prototype.handleUpdateReady = function(event) {
         var me = this;
         // I have seen both Chorme & Firefox throw exceptions when trying
         // to swap cache on updateready. I was not able to reproduce it,
@@ -327,6 +328,8 @@
                 me.hasUpdateFlag = true;
                 // don't use trigger here, otherwise the event wouldn't get triggered
                 me.emit('updateready');
+            }else{
+                me.handleNetworkSucces(event);
             }
             me.applicationCache.swapCache();
         } catch(error) {}
@@ -344,7 +347,7 @@
         if (me.isInitialDownload) {
             prefix = 'init:';
             if (event.type === 'cached') {
-                me.isInitialDownload = true;
+                me.isInitialDownload = false;
             }
         }
 
